@@ -17,25 +17,30 @@
     along with OpenBroadcaster Server.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-var ModuleSvgEditor = new function()
+OBModules.SvgEditor = new function()
 {
+
+  this.init = function()
+  {
+    OB.Callbacks.add('ready',0,OBModules.SvgEditor.init_module);
+  }
 
 	this.init_module = function()
 	{
-		$('#obmenu-media').append('<li data-permissions="create_own_media"><a href="javascript: ModuleSvgEditor.load();">SVG Editor</a></li>');
 
+    OB.UI.addSubMenuItem('media','SVG Editor','svg_editor',OBModules.SvgEditor.load,20,'create_own_media');
 
     // add 'svg editor' menu item to media search context menu
-    api.callback_append('media','media_search',function(params, data) {
+    OB.API.callbackAppend('media','media_search',function(params, data) {
 
       if(!data.data.media) return;
 
       $.each(data.data.media, function(index, media)
       {
     
-        if(media.format=='svg' && sidebar.media_can_edit(media.id))
+        if(media.format=='svg' && OB.Sidebar.mediaCanEdit(media.id))
         {
-          $('#context-menu-'+media.id).append('<li><a href="javascript: ModuleSvgEditor.load_svg('+media.id+');">SVG Editor</a></li>');
+          $('#context-menu-'+media.id).append('<li><a href="javascript: OBModules.SvgEditor.load_svg('+media.id+');">SVG Editor</a></li>');
         }
 
       });
@@ -50,13 +55,13 @@ var ModuleSvgEditor = new function()
     $media = $('#sidebar_search_media_result_'+id);
     if(!$media) alert('Error loading SVG image.');
 
-    this.edit_id = id;
-    this.edit_artist = $media.attr('data-artist');
-    this.edit_title = $media.attr('data-title');
+    OBModules.SvgEditor.edit_id = id;
+    OBModules.SvgEditor.edit_artist = $media.attr('data-artist');
+    OBModules.SvgEditor.edit_title = $media.attr('data-title');
 
     $.get('/preview.php?id='+id+'&dl=1','',function(data)
     {
-      ModuleSvgEditor.load(id, data);
+      OBModules.SvgEditor.load(id, data);
     }, 'text');
   }
 
@@ -67,8 +72,8 @@ var ModuleSvgEditor = new function()
 
   this.load = function(id, data)
   {
-		$('#layout_main').html(html.get('modules/svg_editor/editor.html'));
-    this.resize();
+		OB.UI.replaceMain('modules/svg_editor/editor.html');
+    OBModules.SvgEditor.resize();
 
     // OB-specific customizations
     $('#svgedit').load(function()
@@ -82,7 +87,7 @@ var ModuleSvgEditor = new function()
       $svgedit.find('#svg_editor_fullscreen').click(function() { 
         if($svgedit.find('#svg_editor_fullscreen').hasClass('push_button_pressed')) $svgedit.find('#svg_editor_fullscreen').removeClass('push_button_pressed');
         else $svgedit.find('#svg_editor_fullscreen').addClass('push_button_pressed');
-        ModuleSvgEditor.fullscreen(); 
+        OBModules.SvgEditor.fullscreen(); 
       });
 
       // hide some stuff that doesn't work properly or is potentially confusing to user.
@@ -94,14 +99,14 @@ var ModuleSvgEditor = new function()
 
       // add save functionality
       $svgedit.find('#svg_editor #file_menu').append('<div class="menu_item" id="svg_editor_save" style="">Save Image...</div>');
-      $svgedit.find('#svg_editor_save').click(function() { ModuleSvgEditor.save_window(); });
+      $svgedit.find('#svg_editor_save').click(function() { OBModules.SvgEditor.save_window(); });
 
       // are we editing an svg media item?
       if(data)
       {
         svgCanvas.setSvgString(data);
       }
-      else ModuleSvgEditor.edit_id = false;
+      else OBModules.SvgEditor.edit_id = false;
 
     });
 
@@ -109,21 +114,21 @@ var ModuleSvgEditor = new function()
 
   this.save_window = function()
   {
-		layout.open_dom_window();
-		$('#DOMWindow').html(html.get('modules/svg_editor/save.html'));
+		OB.UI.openModalWindow('modules/svg_editor/save.html');
 
-    if(this.edit_id)
+    if(OBModules.SvgEditor.edit_id)
     {
-      $('#module_svg_editor_save_instructions').text('Are you sure you want to save over the media item: '+this.edit_artist+' - '+this.edit_title+'?');
+      $('#module_svg_editor_save_instructions').text('Are you sure you want to save over the media item: '+OBModules.SvgEditor.edit_artist+' - '+OBModules.SvgEditor.edit_title+'?');
     }
 
     else
     {
-      $('#module_svg_editor_save_instructions').text('You are saving to a new media item.');
-      media.media_addedit_form(0);
-      $('#media_data_middle .upload_data_header').hide();
-      $('#media_data_middle #upload_0_data .new_media_only').hide();
-      $('#media_data_middle #upload_0_data td:nth-child(3)').hide();
+      OB.Media.mediaAddeditForm(0);
+      $('#module_svg_editor_save_heading').hide();
+      $('#media_data_middle .addedit_form_legend legend').html('Save SVG Image');
+      $('#media_data_middle .new_media_only').hide();
+      $('#media_data_middle .copy_to_all').hide();
+      // $('#media_data_middle td:nth-child(3)').hide();
     }
 
   }
@@ -134,28 +139,41 @@ var ModuleSvgEditor = new function()
 
     var postfields = {};
     postfields.svg = data;
-    postfields.id = ModuleSvgEditor.edit_id;
+    postfields.id = OBModules.SvgEditor.edit_id;
 
     if(!postfields.id)
     {
-      var media_fields = media.media_addedit_data(0);
-      
-      $.each(media_fields, function(field,value) { postfields[field] = value; });
+
+      postfields.artist = $('#media_data_middle').find('.artist_field').val();
+      postfields.title = $('#media_data_middle').find('.title_field').val();
+      postfields.album = $('#media_data_middle').find('.album_field').val();
+      postfields.year = $('#media_data_middle').find('.year_field').val();
+
+      postfields.country_id = $('#media_data_middle').find('.country_field').val();
+      postfields.category_id = $('#media_data_middle').find('.category_field').val();
+      postfields.language_id = $('#media_data_middle').find('.language_field').val();
+      postfields.genre_id = $('#media_data_middle').find('.genre_field').val();
+
+      postfields.comments = $('#media_data_middle').find('.comments_field').val();
+
+      postfields.is_copyright_owner = $('#media_data_middle').find('.copyright_field').val();
+      postfields.is_approved = $('#media_data_middle').find('.approved_field').val();
+      postfields.status = $('#media_data_middle').find('.status_field').val();
+      postfields.dynamic_select = $('#media_data_middle').find('.dynamic_select_field').val();
+
     }
 
-    $('#module_svg_editor_save_messagebox').hide();
-
-    api.post('svgeditor','save',postfields,function(response)
+    OB.API.post('svgeditor','save',postfields,function(response)
     {
-      if(response.status==false) $('#module_svg_editor_save_messagebox').text(response.msg).show();
-      else $.closeDOMWindow();
+      if(response.status==false) $('#module_svg_editor_save_message').obWidget('error',response.msg);
+      else OB.UI.closeModalWindow();
 
       if(!postfields.id)
       {
-        ModuleSvgEditor.edit_id = response.data;
-        ModuleSvgEditor.edit_title = postfields.title;
-        ModuleSvgEditor.edit_artist = postfields.artist;
-        sidebar.media_search();
+        OBModules.SvgEditor.edit_id = response.data;
+        OBModules.SvgEditor.edit_title = postfields.title;
+        OBModules.SvgEditor.edit_artist = postfields.artist;
+        OB.Sidebar.mediaSearch();
       }
 
     });
@@ -164,7 +182,7 @@ var ModuleSvgEditor = new function()
   this.save = function()
   {
     var svgCanvas = new embedded_svg_edit(document.getElementById('svgedit'));
-		svgCanvas.getSvgString()(ModuleSvgEditor.save_callback);
+		svgCanvas.getSvgString()(OBModules.SvgEditor.save_callback);
   }
 
   this.resize = function()
@@ -181,7 +199,7 @@ var ModuleSvgEditor = new function()
     // we're not on fullscreen mode.
     else
     {
-      $('#svgedit_container').css({'width': '100%', 'height': '100%'});
+      $('#svgedit_container').css({'width': '100%', 'height': $('#layout_main').height()+'px'});
     }
 
   }
@@ -190,13 +208,12 @@ var ModuleSvgEditor = new function()
   {
     if($('#svgedit_container').css('position')=='fixed') $('#svgedit_container').css({ 'position': 'static'});
     else $('#svgedit_container').css('position', 'fixed');
-    this.resize();
+    OBModules.SvgEditor.resize();
   }
 
 }
 
 $(document).ready(function() {
-	ModuleSvgEditor.init_module();
-  $(window).resize(ModuleSvgEditor.resize);
+  $(window).resize(OBModules.SvgEditor.resize);
 });
 
