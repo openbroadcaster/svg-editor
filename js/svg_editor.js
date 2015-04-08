@@ -46,6 +46,8 @@ OBModules.SvgEditor = new function()
       });
 
     });
+  
+    $(window).resize(OBModules.SvgEditor.resize);
 
 	}
 
@@ -199,7 +201,7 @@ OBModules.SvgEditor = new function()
     // we're not on fullscreen mode.
     else
     {
-      $('#svgedit_container').css({'width': '100%', 'height': $('#layout_main').height()+'px'});
+      $('#svgedit_container').css({'width': '100%', 'height': ($('#layout_main_container').height()-50)+'px'});
     }
 
   }
@@ -212,8 +214,4 @@ OBModules.SvgEditor = new function()
   }
 
 }
-
-$(document).ready(function() {
-  $(window).resize(OBModules.SvgEditor.resize);
-});
 
