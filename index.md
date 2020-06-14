@@ -11,7 +11,10 @@ title: index
 ## SVG Editor
 {:toc}
 
-SVG Editor
+Create and edit SVG graphic files within the OpenBroadcaster web interface.  Save into online media library.
 
 ![ SVG Editor](img/svg_editor.png ){: .svg_editor}
+
+
+
 
