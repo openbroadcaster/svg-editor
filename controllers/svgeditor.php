@@ -1,6 +1,6 @@
 <?
 
-/*     
+/*
     Copyright 2012 OpenBroadcaster, Inc.
 
     This file is part of OpenBroadcaster Server.
@@ -29,20 +29,20 @@ class SvgEditor extends OBFController
 		// $this->user->require_permission('view_logger_log');
 		// $this->LoggerModel = $this->load->model('Logger');
 	}
- 
+
   public function save()
   {
 
 		$this->user->require_permission('manage_media or create_own_media');
 
-    $media_model = $this->load->model('Media');
+		$models = OBFModels::get_instance();
 
     $id = $this->data('id');
     $svg = '<?xml version="1.0" encoding="UTF-8" standalone="no"?>'."\n".$this->data('svg');
 
     if($id)
     {
-      $media = $media_model('get_by_id',$id);
+      $media = $models->media('get_by_id', ['id' => $id]);
       if(!$media) return array(false,'Media not found.');
 
       // can we edit this item? if we don't own it, then require "manage media" permission.
@@ -59,12 +59,12 @@ class SvgEditor extends OBFController
       if(!file_exists($media_file)) return array(false,'Media file not found.');
       file_put_contents($media_file, $svg);
 
-      $media_model->delete_cached($media);
+      $models->media('delete_cached', ['media' => $media]);
 
       return array(true,'Media file saved.',$id);
     }
 
-    else 
+    else
     {
       // get our media item information together.
       $item = array();
@@ -86,15 +86,15 @@ class SvgEditor extends OBFController
       $item['dynamic_select'] = $this->data('dynamic_select');
 
       // thing that media model expects but we don't use here.
-      $item['local_id'] = 0; 
+      $item['local_id'] = 0;
       $item['id'] = false;
 
       // see if our media data is value.
-      $validate = $media_model('validate',$item,true);
+      $validate = $models->media('validate', ['item' => $item, 'skip_upload_check' => true]);
       if($validate[0]==false) return array(false,$validate[2]);
-  
+
       // first we insert our file into the uploads table (so we can get a file ID)...
-      $id = $this->db->insert('uploads',array('key'=>'', 'expiry'=>strtotime('+24 hours'), 'format'=>'svg', 'type'=>'image', 'duration'=>null)); 
+      $id = $this->db->insert('uploads',array('key'=>'', 'expiry'=>strtotime('+24 hours'), 'format'=>'svg', 'type'=>'image', 'duration'=>null));
       if(!$id) return array(false,'Unknown error saving new media.');
 
       // now we save our svg data to a file based on the id.
@@ -103,7 +103,7 @@ class SvgEditor extends OBFController
 
       $item['file_id'] = $id;
       $item['file_info'] = array('duration'=>null, 'type'=>'image', 'format'=>'svg');
-      $new_media_id = $media_model('save',$item);
+      $new_media_id = $models->media('save', ['item' => $item]);
 
       return array(true,'Saved.',$new_media_id);
 
