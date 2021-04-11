@@ -22,8 +22,8 @@
 class SvgEditorModule extends OBFModule
 {
 
-	public $name = 'SVG Editor';
-	public $description = 'Edit SVG files within the openbroadcaster web interface.';
+	public $name = 'SVG Editor v1.0';
+	public $description = 'Create and edit SVG files within the OBServer interface.';
 
 	public function callbacks()
 	{
