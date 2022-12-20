@@ -3,10 +3,11 @@ layout: default
 title: index
 ---
 
+# SVG Editor
+{:.no_toc}
+
 * TOC
 {:toc}
-
-## SVG Editor
 
 ![ SVG Editor](img/svg_editor.png ){: .svg_editor}
 
